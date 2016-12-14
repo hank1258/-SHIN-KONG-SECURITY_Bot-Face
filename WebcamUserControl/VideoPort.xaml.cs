@@ -18,16 +18,20 @@ using Microsoft.ProjectOxford.Face.Contract;
 using WebCamUserControl;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
+using System.Collections.ObjectModel;
+
 namespace WebcamUserControl
 {
     public partial class VideoPortControl : UserControl
     {
         
-        Microsoft.ProjectOxford.Face.FaceServiceClient faceClient = new FaceServiceClient("2c2a7f6eca9e4197926721a886786d6b");
+        Microsoft.ProjectOxford.Face.FaceServiceClient faceClient = new FaceServiceClient("8f7a031e5133417aa8b1f1ab525efec1");
         // Create grabber. 
        // FrameGrabber<Face[]> grabber = new FrameGrabber<Face[]>();
         private readonly FrameGrabber<LiveCameraResult> _grabber = null;
         private LiveCameraResult _latestResultsToDisplay = null;
+        public  string GroupName = "mtcbotdemo";
+        private ObservableCollection<Person> Persons = new ObservableCollection<Person>();
         private bool _fuseClientRemoteResults;
         private static readonly ImageEncodingParam[] s_jpegParams = {
             new ImageEncodingParam(OpenCvSharp.ImageEncodingID.JpegQuality,60) //ImwriteFlags.JpegQuality, 60)
@@ -209,6 +213,25 @@ namespace WebcamUserControl
                 Console.WriteLine("age : "+faces[i].FaceAttributes.Age);
                 Console.WriteLine("gender : "+faces[i].FaceAttributes.Gender);
             }
+
+
+            var identifyResult = await faceClient.IdentifyAsync(GroupName, faces.Select(ff => ff.FaceId).ToArray());
+            for (int idx = 0; idx < faces.Length; idx++)
+            {
+                // Update identification result for rendering
+             
+                var res = identifyResult[idx];
+                if (res.Candidates.Length > 0) //&& Persons.Any(p => p.PersonId == res.Candidates[0].PersonId.ToString()))
+                {
+                    //  face.PersonName = Persons.Where(p => p.PersonId == res.Candidates[0].PersonId.ToString()).First().PersonName;
+                    Console.WriteLine("hi hank");
+                }
+                else
+                {
+                  //  face.PersonName = "Unknown";
+                }
+            }
+
             // Output. 
             return new LiveCameraResult { Faces = faces };
         }
