@@ -31,6 +31,8 @@ namespace WebcamUserControl
         private readonly FrameGrabber<LiveCameraResult> _grabber = null;
         private LiveCameraResult _latestResultsToDisplay = null;
         public  string GroupName = "mtcbotdemo";
+        public string ShinKuanTestPersonID = "f7d3f0af-7866-4f2f-80eb-d8d815e8e735";
+        public string ShinKuanTestPersistedFaceId = "8477e7fa-529e-4c43-9e6e-54e6264a36d1";
         private ObservableCollection<Person> Persons = new ObservableCollection<Person>();
         private bool _fuseClientRemoteResults;
         private static readonly ImageEncodingParam[] s_jpegParams = {
@@ -225,6 +227,12 @@ namespace WebcamUserControl
                 {
                     //  face.PersonName = Persons.Where(p => p.PersonId == res.Candidates[0].PersonId.ToString()).First().PersonName;
                     Console.WriteLine("hi hank");
+                    WMPLib.WindowsMediaPlayer wplayer = new WMPLib.WindowsMediaPlayer();
+       
+                    wplayer.URL = "3022.mp3";
+                    wplayer.controls.play();
+
+                  
                 }
                 else
                 {
