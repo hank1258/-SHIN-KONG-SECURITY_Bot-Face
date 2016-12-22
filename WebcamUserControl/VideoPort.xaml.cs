@@ -19,6 +19,11 @@ using WebCamUserControl;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using System.Collections.ObjectModel;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Drawing.Drawing2D;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace WebcamUserControl
 {
@@ -33,6 +38,10 @@ namespace WebcamUserControl
         public  string GroupName = "mtcbotdemo";
         public string ShinKuanTestPersonID = "f7d3f0af-7866-4f2f-80eb-d8d815e8e735";
         public string ShinKuanTestPersistedFaceId = "8477e7fa-529e-4c43-9e6e-54e6264a36d1";
+        public string Face_Directory = "Face";
+        public string Face_File = "faceimg.png";
+        private static string BLOB_CONTAINER_STRING = "shinkongcontainer";
+        private static string BLOB_CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=shinkong;AccountKey=pyl//qs7YQ2VPm1Dl7/8hw5ObceaMTamfobzTvOajmCQyWzWxuS1NYThvfp4HLYkeNRjJYeQ5rc7zZ38YR/Szw==;";
         private ObservableCollection<Person> Persons = new ObservableCollection<Person>();
         private bool _fuseClientRemoteResults;
         private static readonly ImageEncodingParam[] s_jpegParams = {
@@ -202,13 +211,19 @@ namespace WebcamUserControl
 
         private async Task<LiveCameraResult> FacesAnalysisFunction(VideoFrame frame)
         {
-      
+            
+
             // Encode image. 
-            var jpg = frame.Image.ToMemoryStream(".jpg", s_jpegParams);
+            var framestream = frame.Image.ToMemoryStream(".jpg", s_jpegParams);
+
+            Bitmap temp_frame = new Bitmap(frame.Image.ToMemoryStream(".jpg", s_jpegParams));
+           
+            // im.Save("image.bmp");
+
             // Submit image to API. 
             var attrs = new List<FaceAttributeType> { FaceAttributeType.Age,
                 FaceAttributeType.Gender, FaceAttributeType.HeadPose };
-            var faces = await faceClient.DetectAsync(jpg, returnFaceAttributes: attrs);
+            var faces = await faceClient.DetectAsync(framestream, true,true,returnFaceAttributes: attrs);
             // Count the API call. 
             int i;
             for( i =0 ; i < faces.Length ; i++){
@@ -232,7 +247,63 @@ namespace WebcamUserControl
                     wplayer.URL = "3022.mp3";
                     wplayer.controls.play();
 
-                  
+                    Bitmap CroppedImage = null;
+                    if (faces[idx].FaceAttributes.HeadPose.Roll >= 10 || faces[idx].FaceAttributes.HeadPose.Roll <= -10)
+                    {
+                        System.Drawing.Rectangle rect = new System.Drawing.Rectangle(Convert.ToInt32(faces[idx].FaceRectangle.Left), Convert.ToInt32(faces[idx].FaceRectangle.Top), faces[idx].FaceRectangle.Width, faces[idx].FaceRectangle.Height);
+
+                        CroppedImage = new Bitmap(CropRotatedRect(temp_frame, rect, Convert.ToSingle(faces[idx].FaceAttributes.HeadPose.Roll * -1), true));
+                    }
+                    else
+                    {
+                        CroppedImage = new Bitmap(temp_frame.Clone(new System.Drawing.Rectangle(faces[idx].FaceRectangle.Left, faces[idx].FaceRectangle.Top, faces[idx].FaceRectangle.Width, faces[idx].FaceRectangle.Height), temp_frame.PixelFormat));
+
+                    }
+
+
+                    //Save to local
+                    String FacePath = Directory.GetCurrentDirectory() + "\\" + Face_Directory;
+                    if (!Directory.Exists(FacePath))
+                    {
+                        Directory.CreateDirectory(FacePath);
+                    }
+                    StringBuilder st = new StringBuilder();
+                    st.Append(FacePath+"\\"+Face_File);   
+                    string outputFileName = st.ToString();
+                    using (MemoryStream memory = new MemoryStream())
+                    {
+                        using (FileStream fs = new FileStream(outputFileName, FileMode.Create, FileAccess.ReadWrite))
+                        {
+                            CroppedImage.Save(memory, ImageFormat.Png);
+                            byte[] bytes = memory.ToArray();
+                            fs.Write(bytes, 0, bytes.Length);
+                            fs.Flush();
+                            fs.Close();
+                            memory.Flush();
+                            memory.Close();
+                        }
+
+                    }
+
+                    //Upload To Blob
+                    string filename = Face_Directory + "\\" + Face_File;
+     
+                    string path;
+                    if (Path.GetPathRoot(filename) != null && Path.GetPathRoot(filename) != "")
+                        path = filename.Replace(Path.GetPathRoot(filename), "").Replace("\\", "/");
+                    else
+                        path = filename.Replace("\\", "/");
+
+                    CloudStorageAccount storageAccount = CloudStorageAccount.Parse(BLOB_CONNECTION_STRING);
+                    CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
+                    CloudBlobContainer container = blobClient.GetContainerReference(BLOB_CONTAINER_STRING);
+                    CloudBlockBlob blockBlob = container.GetBlockBlobReference(path);
+                    using (var fileStream = System.IO.File.OpenRead(filename))
+                    {
+                        blockBlob.UploadFromStream(fileStream);
+                    }
+
+
                 }
                 else
                 {
@@ -243,6 +314,25 @@ namespace WebcamUserControl
             // Output. 
             return new LiveCameraResult { Faces = faces };
         }
+
+        public static Bitmap CropRotatedRect(Bitmap source, System.Drawing.Rectangle rect, float angle, bool HighQuality)
+        {
+            Bitmap result = new Bitmap(rect.Width, rect.Height);
+            using (Graphics g = Graphics.FromImage(result))
+            {
+                g.InterpolationMode = HighQuality ? InterpolationMode.HighQualityBicubic : InterpolationMode.Default;
+                using (System.Drawing.Drawing2D.Matrix mat = new System.Drawing.Drawing2D.Matrix())
+                {
+                    mat.Translate(-rect.Location.X, -rect.Location.Y);
+                    System.Drawing.Point p = new System.Drawing.Point(rect.Location.X + rect.Width / 2, rect.Location.Y + rect.Height / 2);
+                    mat.RotateAt(angle, p);
+                    g.Transform = mat;
+                    g.DrawImage(source, new System.Drawing.Point(0, 0));
+                }
+            }
+            return result;
+        }
+
 
         private async void video_NewFrame(object sender, NewFrameEventArgs eventArgs)
         {
