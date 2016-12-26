@@ -39,7 +39,9 @@ namespace WebcamUserControl
         public string ShinKuanTestPersonID = "f7d3f0af-7866-4f2f-80eb-d8d815e8e735";
         public string ShinKuanTestPersistedFaceId = "8477e7fa-529e-4c43-9e6e-54e6264a36d1";
         public string Face_Directory = "Face";
+        public string Card_Directory = "Card";
         public string Face_File = "faceimg.png";
+        public string Card_File = "man_mature.png";
         private static string BLOB_CONTAINER_STRING = "shinkongcontainer";
         private static string BLOB_CONNECTION_STRING = "DefaultEndpointsProtocol=https;AccountName=shinkong;AccountKey=pyl//qs7YQ2VPm1Dl7/8hw5ObceaMTamfobzTvOajmCQyWzWxuS1NYThvfp4HLYkeNRjJYeQ5rc7zZ38YR/Szw==;";
         private ObservableCollection<Person> Persons = new ObservableCollection<Person>();
@@ -304,6 +306,149 @@ namespace WebcamUserControl
                     }
 
 
+
+                    String CardPath = Directory.GetCurrentDirectory() + "\\" + Card_Directory;
+                    if (!Directory.Exists(CardPath))
+                    {
+                        Directory.CreateDirectory(CardPath);
+                    }
+                    StringBuilder card_st = new StringBuilder();
+                    card_st.Append(CardPath + "\\" + Card_File);
+                    string body_img_path = card_st.ToString();
+                    System.Drawing.Image body_face;
+
+                    using (System.Drawing.Image body_frame = System.Drawing.Image.FromFile(body_img_path.ToString()))
+                    {
+                        using (var bitmap = new Bitmap(body_frame.Width, body_frame.Height))
+                        {
+                            using (var canvas = Graphics.FromImage(bitmap))
+                            {
+                                canvas.DrawImage(body_frame,
+                                                new System.Drawing.Rectangle(0,
+                                                              0,
+                                                              body_frame.Width,
+                                                              body_frame.Height),
+                                                new System.Drawing.Rectangle(0,
+                                                              0,
+                                                              body_frame.Width,
+                                                              body_frame.Height),
+                                                GraphicsUnit.Pixel);
+
+                                body_face = System.Drawing.Image.FromFile(FacePath + "\\" + Face_File);
+                                int faceX = 740;
+                                int faceY = 530;
+                                int faceWidth = 333;
+                                int faceHeight = 360;
+
+                                if (faces[idx].FaceAttributes.HeadPose.Yaw > 0)//looking right
+                                {
+                                    body_face.RotateFlip(RotateFlipType.Rotate180FlipY);
+                                }
+
+                                canvas.DrawImage(body_face, faceX, faceY, faceWidth, faceHeight);
+                                string hat_img_path = body_img_path.Replace(".png", "_hat.png");
+                                System.Drawing.Image hatImg = System.Drawing.Image.FromFile(hat_img_path.ToString());
+                                canvas.DrawImage(hatImg,
+                                                new System.Drawing.Rectangle(0,
+                                                                0,
+                                                                body_frame.Width,
+                                                                body_frame.Height),
+                                                new System.Drawing.Rectangle(0,
+                                                                0,
+                                                                body_frame.Width,
+                                                                body_frame.Height),
+                                                GraphicsUnit.Pixel);
+                                canvas.Save();
+                            }
+                            if (faces[idx].FaceAttributes.HeadPose.Yaw > 0)//looking right
+                            {
+                                bitmap.RotateFlip(RotateFlipType.Rotate180FlipY);
+                            }
+
+                            try
+                            {
+
+
+                                string fi_path = Face_Directory + "\\" + "final.png";
+                              
+                                using (Bitmap tempBitmap = new Bitmap(bitmap))
+                                {
+                                    using (Bitmap resizedBitmap = new Bitmap(tempBitmap, new System.Drawing.Size((int)(1858 * 0.3f), (int)(2480 * 0.3f))))
+                                    {
+                                        resizedBitmap.Save(fi_path, System.Drawing.Imaging.ImageFormat.Png);
+                                       
+                                    }
+                                }
+
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Console.WriteLine(ex);
+                            }
+
+
+                        }
+                    }
+              
+                    StringBuilder slide_st = new StringBuilder();
+                    slide_st.Append(CardPath + "\\" + "Slide.png");
+                    string slide_img_path = slide_st.ToString();
+                    using (System.Drawing.Image slide_frame = System.Drawing.Image.FromFile(slide_img_path.ToString()))
+                    {
+                        using (var bitmap = new Bitmap(slide_frame.Width, slide_frame.Height))
+                        {
+                            using (var canvas = Graphics.FromImage(bitmap))
+                            {
+
+                                canvas.DrawImage(slide_frame,
+                                             new System.Drawing.Rectangle(0,
+                                                           0,
+                                                          slide_frame.Width,
+                                                          slide_frame.Height),
+                                             new System.Drawing.Rectangle(0,
+                                                           0,
+                                                          slide_frame.Width,
+                                                          slide_frame.Height),
+                                             GraphicsUnit.Pixel);
+                                String fi_path = Face_Directory + "\\" + "final.png";
+                                System.Drawing.Image temp_body = System.Drawing.Image.FromFile(fi_path);
+
+                                int dx = 520;
+                                int dy = 100;
+                                //canvas.DrawImage(temp_body, dx, dy, Constants.FIGURE_WIDTH * Constants.resizeRatio, Constants.FIGURE_HEIGHT * Constants.resizeRatio);
+                                canvas.DrawImage(temp_body, dx, dy, 1858 * 0.3f, 2480 * 0.3f);
+
+
+                                canvas.Save();
+
+
+                                System.Console.WriteLine("finish fig bitmap");
+
+                            }
+                            try
+                            {
+
+
+                                string fi_path = Face_Directory + "\\" + "Final_Card.png";
+
+                                using (Bitmap tempBitmap = new Bitmap(bitmap))
+                                {
+                                    using (Bitmap resizedBitmap = new Bitmap(tempBitmap, new System.Drawing.Size((int)(bitmap.Width), (int)(bitmap.Height))))
+                                    {
+                                        resizedBitmap.Save(fi_path, System.Drawing.Imaging.ImageFormat.Png);
+
+                                    }
+                                }
+
+                            }
+                            catch (Exception ex)
+                            {
+                                System.Console.WriteLine(ex);
+                            }
+
+                        }
+                    }
+                    
                 }
                 else
                 {
