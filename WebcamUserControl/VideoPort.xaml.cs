@@ -57,7 +57,7 @@ namespace WebcamUserControl
             // Set up a listener for when the client receives a new frame.
             _grabber.NewFrameProvided += (s, e) =>
             {
-               // Console.WriteLine("ddvvvvvvvvvvvvvvvvvvvvvvvvv");
+              
                 // The callback may occur on a different thread, so we must use the
                 // MainWindow.Dispatcher when manipulating the UI. 
                 this.Dispatcher.BeginInvoke((Action)(() =>
@@ -65,7 +65,7 @@ namespace WebcamUserControl
                     var device = (FilterInfo)VideoDevicesComboBox.SelectedItem;
                     // Display the image in the left pane.
                      LeftImage.Source = e.Frame.Image.ToBitmapSource();
-                 //   Console.WriteLine("ddddddddddddddddd");
+ 
                     //videoSourcePlayer.VideoSource= e.Frame.Image.ToBitmapSource();
 
                     // If we're fusing client-side face detection with remote analysis, show the
@@ -165,7 +165,7 @@ namespace WebcamUserControl
             {
                 var source = new VideoCaptureDevice(device.MonikerString);
                 // register NewFrame event handler
-                Console.WriteLine("ppppp");
+                Console.WriteLine("pp here");
             //    source.NewFrame += new NewFrameEventHandler(video_NewFrame);
 
              //   videoSourcePlayer.VideoSource = source;
@@ -389,9 +389,9 @@ namespace WebcamUserControl
 
                         }
                     }
-              
+                     //draw image
                     StringBuilder slide_st = new StringBuilder();
-                    slide_st.Append(CardPath + "\\" + "Slide.png");
+                    slide_st.Append(CardPath + "\\" + "Background.png");
                     string slide_img_path = slide_st.ToString();
                     using (System.Drawing.Image slide_frame = System.Drawing.Image.FromFile(slide_img_path.ToString()))
                     {
@@ -479,12 +479,12 @@ namespace WebcamUserControl
         }
 
 
-        private async void video_NewFrame(object sender, NewFrameEventArgs eventArgs)
+        private void video_NewFrame(object sender, NewFrameEventArgs eventArgs)
         {
             if (!string.IsNullOrWhiteSpace(OverlayImagePath))
             {
                 var frame = eventArgs.Frame; // reference to the current frame   
-               
+
                 var g = Graphics.FromImage(frame);
                 //  await faceClient.DetectAsync(frame.Image.ToMemoryStream(".jpg"));
                 using (System.Drawing.Image backImage = (Bitmap)frame.Clone())
@@ -495,11 +495,11 @@ namespace WebcamUserControl
                     try
                     {
 
-                       // Console.WriteLine(faceimagestream);
-                     //   Microsoft.ProjectOxford.Face.Contract.Face[] faces = await faceserviceclient.DetectAsync(faceimagestream);//, true, true,
+                        // Console.WriteLine(faceimagestream);
+                        //   Microsoft.ProjectOxford.Face.Contract.Face[] faces = await faceserviceclient.DetectAsync(faceimagestream);//, true, true,
 
                         //new FaceAttributeType[] { FaceAttributeType.Gender, FaceAttributeType.Age, FaceAttributeType.Smile, FaceAttributeType.HeadPose, FaceAttributeType.Glasses });
-                      //  Console.WriteLine("asdasdasdasdasdasdasd");
+                        //  Console.WriteLine("asdasdasdasdasdasdasd");
                         //if (faces.Length >= 0)
 
                         //{
